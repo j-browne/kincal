@@ -1,3 +1,8 @@
+#[derive(Debug)]
+pub enum Error {
+    InvalidIndex,
+}
+
 // In `masses`, the indices refer to the following:
 // 0: projectile
 // 1: target
@@ -20,8 +25,25 @@ impl ReactionKinematics {
         &self.masses
     }
 
+    pub fn mass(&self, idx: usize) -> Result<f64, Error> {
+        match idx {
+            0..=3 => Ok(self.masses[idx]),
+            _ => Err(Error::InvalidIndex),
+        }
+    }
+
     pub fn set_masses(&mut self, masses: [f64; 4]) {
         self.masses = masses;
+    }
+
+    pub fn set_mass(&mut self, idx: usize, mass: f64) -> Result<(), Error> {
+        match idx {
+            0..=3 => {
+                self.masses[idx] = mass;
+                Ok(())
+                },
+            _ => Err(Error::InvalidIndex),
+        }
     }
 
     pub fn energy(&self) -> f64 {
@@ -65,7 +87,7 @@ impl ReactionKinematics {
         ((pcm_i + (m1_2 + pcm_i_2).sqrt())/ m1).ln()
     }
 
-    fn th_max(&self, idx: usize) -> Option<f64> {
+    fn th_max_assert(&self, idx: usize) -> Option<f64> {
         assert!(idx == 2 || idx == 3);
 
         let m = self.masses[idx];
@@ -79,12 +101,11 @@ impl ReactionKinematics {
         }
     }
 
-    pub fn th2_max(&self) -> Option<f64> {
-        self.th_max(2)
-    }
-
-    pub fn th3_max(&self) -> Option<f64> {
-        self.th_max(3)
+    pub fn th_max(&self, idx: usize) -> Result<Option<f64>, Error> {
+        match idx {
+            0..=3 => Ok(self.th_max_assert(idx)),
+            _ => Err(Error::InvalidIndex),
+        }
     }
 
     fn thcm_to_th(&self, thcm:f64, idx: usize) -> f64 {
@@ -146,7 +167,7 @@ impl ReactionKinematics {
         let m = self.masses[idx];
         let m_2 = m.powi(2);
         let chi = self.chi();
-        let th_max = self.th_max(idx);
+        let th_max = self.th_max_assert(idx);
 
         match th_max {
             Some(th_max) if th > th_max => None,
@@ -171,6 +192,20 @@ impl ReactionKinematics {
         e.map(|e| e - m)
     }
 
+    pub fn th_to_k_plus(&self, th: f64, idx: usize) -> Result<Option<f64>, Error> {
+        match idx {
+            0..=3 => Ok(self.th_to_k_pm(th, idx, 1.0)),
+            _ => Err(Error::InvalidIndex),
+        }
+    }
+
+    pub fn th_to_k_minus(&self, th: f64, idx: usize) -> Result<Option<f64>, Error> {
+        match idx {
+            0..=3 => Ok(self.th_to_k_pm(th, idx, -1.0)),
+            _ => Err(Error::InvalidIndex),
+        }
+    }
+
     pub fn th2_to_k2_plus(&self, th: f64) -> Option<f64> {
         self.th_to_k_pm(th, 2, 1.0)
     }
@@ -188,7 +223,7 @@ impl ReactionKinematics {
     }
 
     fn th_to_k(&self, th: f64, idx: usize) -> (Option<f64>, Option<f64>) {
-        let th_max = self.th_max(idx);
+        let th_max = self.th_max_assert(idx);
 
         match th_max {
             None => (self.th_to_k_pm(th, idx, 1.0), None),
