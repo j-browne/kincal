@@ -1,8 +1,8 @@
 #![feature(try_from)]
-pub mod particle;
+mod particle;
 mod error;
 
-use particle::{Particle, Outgoing};
+pub use particle::{Particle, Incoming, Outgoing};
 pub use error::Error;
 
 #[derive(Debug)]
@@ -138,39 +138,8 @@ impl ReactionKinematics {
         ((pcm_i + (m1_2 + pcm_i_2).sqrt())/ m1).ln()
     }
 
-    fn thcm_to_e(&self, thcm: f64, out: Outgoing) -> f64 {
-        let pcm_f_2 = self.pcm_f_2();
-        let pcm_f = pcm_f_2.sqrt();
-        let m_2 = self.masses[out.index()].powi(2);
-        let chi = self.chi();
-        let pm = match out { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
-
-        f64::sqrt(pcm_f_2 + m_2) * f64::cosh(chi) + pm * pcm_f * f64::cos(thcm.to_radians()) * f64::sinh(chi)
-    }
-
-    pub fn thcm_to_k(&self, thcm: f64, out: Outgoing) -> f64 {
-        let e = self.thcm_to_e(thcm, out);
-        let m = self.masses[out.index()];
-
-        e - m
-    }
-
-    fn th_to_e(&self, th: f64, out: Outgoing) -> Value {
-        let p = self.th_to_p(th, out);
-        let m = self.masses[out.index()];
-
-        p.map(|p| f64::sqrt(p.powi(2) + m.powi(2)))
-    }
-
-    pub fn th_to_k(&self, th: f64, out: Outgoing) -> Value {
-        let e = self.th_to_e(th, out);
-        let m = self.masses[out.index()];
-
-        e.map(|e| e - m)
-    }
-
-    pub fn th_max(&self, out: Outgoing) -> Option<f64> {
-        let m = self.masses[out.index()];
+    pub fn th_max(&self, part: Outgoing) -> Option<f64> {
+        let m = self.masses[part.index()];
         let pcm_f = self.pcm_f_2().sqrt();
         let chi = self.chi();
 
@@ -181,10 +150,39 @@ impl ReactionKinematics {
         }
     }
 
-    fn th_to_p_pm(&self, th: f64, out: Outgoing, pm: PlusMinus) -> f64 {
+    pub fn thcm_to_th(&self, thcm:f64, part: Outgoing) -> f64 {
+        let pcm_f_2 = self.pcm_f_2();
+        let m_2 = self.masses[part.index()].powi(2);
+        let chi = self.chi();
+        let pm_particle = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+
+        f64::atan2(
+            f64::sin(thcm.to_radians()),
+            pm_particle * f64::cos(thcm.to_radians()) * f64::cosh(chi) + f64::sqrt(1.0 + m_2 / pcm_f_2) * f64::sinh(chi)
+        ).to_degrees()
+    }
+
+    fn thcm_to_e(&self, thcm: f64, part: Outgoing) -> f64 {
+        let pcm_f_2 = self.pcm_f_2();
+        let pcm_f = pcm_f_2.sqrt();
+        let m_2 = self.masses[part.index()].powi(2);
+        let chi = self.chi();
+        let pm = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+
+        f64::sqrt(pcm_f_2 + m_2) * f64::cosh(chi) + pm * pcm_f * f64::cos(thcm.to_radians()) * f64::sinh(chi)
+    }
+
+    pub fn thcm_to_k(&self, thcm: f64, part: Outgoing) -> f64 {
+        let e = self.thcm_to_e(thcm, part);
+        let m = self.masses[part.index()];
+
+        e - m
+    }
+
+    fn th_to_p_pm(&self, th: f64, part: Outgoing, pm: PlusMinus) -> f64 {
         use PlusMinus::{Plus, Minus};
         let pcm_f_2 = self.pcm_f_2();
-        let m = self.masses[out.index()];
+        let m = self.masses[part.index()];
         let m_2 = m.powi(2);
         let chi = self.chi();
         let pm = match pm { Plus => 1.0, Minus => -1.0 };
@@ -193,38 +191,25 @@ impl ReactionKinematics {
         (1.0 + f64::sin(th.to_radians()).powi(2) * f64::sinh(chi).powi(2))
     }
 
-    pub fn th_to_p(&self, th: f64, out: Outgoing) -> Value {
+    fn th_to_p(&self, th: f64, part: Outgoing) -> Value {
         use PlusMinus::{Plus, Minus};
         use Value::{Zero, One, Two};
-        let th_max = self.th_max(out);
+        let th_max = self.th_max(part);
 
         match th_max {
-            None => Value::One(self.th_to_p_pm(th, out, Plus)),
-            Some(th_max) if th == th_max => One(self.th_to_p_pm(th, out, Plus)),
-            Some(th_max) if th < th_max => Two(self.th_to_p_pm(th, out, Plus),
-                                               self.th_to_p_pm(th, out, Minus)),
+            None => One(self.th_to_p_pm(th, part, Plus)),
+            Some(th_max) if th == th_max => One(self.th_to_p_pm(th, part, Plus)),
+            Some(th_max) if th < th_max => Two(self.th_to_p_pm(th, part, Plus),
+                                               self.th_to_p_pm(th, part, Minus)),
             Some(_) => Zero,
         }
     }
 
-
-    pub fn thcm_to_th(&self, thcm:f64, out: Outgoing) -> f64 {
+    fn th_to_thcm_p(&self, th: f64, part: Outgoing, p: f64) -> f64 {
         let pcm_f_2 = self.pcm_f_2();
-        let m_2 = self.masses[out.index()].powi(2);
+        let m_2 = self.masses[part.index()].powi(2);
         let chi = self.chi();
-        let pm_particle = match out { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
-
-        f64::atan2(
-            f64::sin(thcm.to_radians()),
-            pm_particle * f64::cos(thcm.to_radians()) * f64::cosh(chi) + f64::sqrt(1.0 + m_2 / pcm_f_2) * f64::sinh(chi)
-        ).to_degrees()
-    }
-
-    fn th_to_thcm_p(&self, th: f64, out: Outgoing, p: f64) -> f64 {
-        let pcm_f_2 = self.pcm_f_2();
-        let m_2 = self.masses[out.index()].powi(2);
-        let chi = self.chi();
-        let pm = match out { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+        let pm = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
 
         f64::atan2(
             p * f64::sin(th.to_radians()) * f64::cosh(chi),
@@ -232,79 +217,36 @@ impl ReactionKinematics {
         ).to_degrees()
     }
 
-    pub fn th_to_thcm(&self, th: f64, out: Outgoing) -> Value {
-        let p = self.th_to_p(th, out);
+    pub fn th_to_thcm(&self, th: f64, part: Outgoing) -> Value {
+        let p = self.th_to_p(th, part);
 
-        p.map(|p| self.th_to_thcm_p(th, out, p))
+        p.map(|p| self.th_to_thcm_p(th, part, p))
     }
 
+    fn th_to_e(&self, th: f64, part: Outgoing) -> Value {
+        let p = self.th_to_p(th, part);
+        let m = self.masses[part.index()];
 
-    pub fn thcm_to_th2(&self, thcm: f64) -> Value {
-        self.thcm_to_th(thcm, Outgoing::Ejectile).into()
+        p.map(|p| f64::sqrt(p.powi(2) + m.powi(2)))
     }
 
-    pub fn thcm_to_th3(&self, thcm: f64) -> Value {
-        self.thcm_to_th(thcm, Outgoing::Recoil).into()
+    pub fn th_to_k(&self, th: f64, part: Outgoing) -> Value {
+        let e = self.th_to_e(th, part);
+        let m = self.masses[part.index()];
+
+        e.map(|e| e - m)
     }
 
-    pub fn thcm_to_kcm(&self, _thcm: f64) -> Value {
-        unimplemented!();
+    pub fn thi_to_thj(&self, thi: f64, parti: Outgoing, partj: Outgoing) -> Value {
+        let thcm = self.th_to_thcm(thi, parti);
+
+        thcm.map(|thcm| self.thcm_to_th(thcm, partj))
     }
 
-    pub fn thcm_to_k2(&self, thcm: f64) -> Value {
-        self.thcm_to_k(thcm, Outgoing::Ejectile).into()
-    }
+    pub fn thi_to_kj(&self, thi: f64, parti: Outgoing, partj: Outgoing) -> Value {
+        let thcm = self.th_to_thcm(thi, parti);
 
-    pub fn thcm_to_k3(&self, thcm: f64) -> Value {
-        self.thcm_to_k(thcm, Outgoing::Recoil).into()
-    }
-
-    pub fn th2_to_thcm(&self, th: f64) -> Value {
-        self.th_to_thcm(th, Outgoing::Ejectile).into()
-    }
-
-    pub fn th2_to_th3(&self, th: f64) -> Value {
-        let thcm = self.th_to_thcm(th, Outgoing::Ejectile);
-
-        thcm.map(|thcm| self.thcm_to_th(thcm, Outgoing::Recoil))
-    }
-
-    pub fn th2_to_kcm(&self, _th: f64) -> Value {
-        unimplemented!();
-    }
-
-    pub fn th2_to_k2(&self, th: f64) -> Value {
-        self.th_to_k(th, Outgoing::Ejectile)
-    }
-
-    pub fn th2_to_k3(&self, th: f64) -> Value {
-        let thcm = self.th_to_thcm(th, Outgoing::Ejectile);
-
-        thcm.map(|thcm| self.thcm_to_k(thcm, Outgoing::Recoil))
-    }
-
-    pub fn th3_to_thcm(&self, th: f64) -> Value {
-        self.th_to_thcm(th, Outgoing::Recoil).into()
-    }
-
-    pub fn th3_to_th2(&self, th: f64) -> Value {
-        let thcm = self.th_to_thcm(th, Outgoing::Recoil);
-
-        thcm.map(|thcm| self.thcm_to_th(thcm, Outgoing::Ejectile))
-    }
-
-    pub fn th3_to_kcm(&self, _th: f64) -> Value {
-        unimplemented!();
-    }
-
-    pub fn th3_to_k2(&self, th: f64) -> Value {
-        let thcm = self.th_to_thcm(th, Outgoing::Recoil);
-
-        thcm.map(|thcm| self.thcm_to_k(thcm, Outgoing::Ejectile))
-    }
-
-    pub fn th3_to_k3(&self, th: f64) -> Value {
-        self.th_to_k(th, Outgoing::Recoil)
+        thcm.map(|thcm| self.thcm_to_k(thcm, partj))
     }
 }
 
