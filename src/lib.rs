@@ -13,52 +13,52 @@ enum PlusMinus {
 
 #[derive(Debug)]
 pub enum Value {
-    Zero,
-    One(f64),
-    Two(f64, f64),
+    NoVal,
+    OneVal(f64),
+    TwoVal(f64, f64),
 }
 
 impl Value {
     pub fn map<F: Fn(f64) -> f64>(&self, f: F) -> Value {
-        use Value::{Zero, One, Two};
+        use Value::{NoVal, OneVal, TwoVal};
         match self {
-            Zero => Zero,
-            One(x) => One(f(*x)),
-            Two(x1, x2) => Two(f(*x1), f(*x2)),
+            NoVal => NoVal,
+            OneVal(x) => OneVal(f(*x)),
+            TwoVal(x1, x2) => TwoVal(f(*x1), f(*x2)),
         }
     }
 }
 
 impl From<f64> for Value {
     fn from(f: f64) -> Self {
-        Value::One(f)
+        Value::OneVal(f)
     }
 }
 
 impl From<(f64, f64)> for Value {
     fn from(f: (f64, f64)) -> Self {
-        Value::Two(f.0, f.1)
+        Value::TwoVal(f.0, f.1)
     }
 }
 
 impl From<Option<f64>> for Value {
     fn from(o: Option<f64>) -> Self {
-        use Value::{Zero, One};
+        use Value::{NoVal, OneVal};
         match o {
-            Some(f) => One(f),
-            None => Zero,
+            Some(f) => OneVal(f),
+            None => NoVal,
         }
     }
 }
 
 impl From<(Option<f64>, Option<f64>)> for Value {
     fn from(o: (Option<f64>, Option<f64>)) -> Self {
-        use Value::{Zero, One, Two};
+        use Value::{NoVal, OneVal, TwoVal};
         match o {
-            (Some(f1), Some(f2)) => Two(f1, f2),
-            (Some(f), None) => One(f),
-            (None, Some(f)) => One(f),
-            (None, None) => Zero,
+            (Some(f1), Some(f2)) => TwoVal(f1, f2),
+            (Some(f), None) => OneVal(f),
+            (None, Some(f)) => OneVal(f),
+            (None, None) => NoVal,
         }
     }
 }
@@ -193,15 +193,15 @@ impl ReactionKinematics {
 
     fn th_to_p(&self, th: f64, part: Outgoing) -> Value {
         use PlusMinus::{Plus, Minus};
-        use Value::{Zero, One, Two};
+        use Value::{NoVal, OneVal, TwoVal};
         let th_max = self.th_max(part);
 
         match th_max {
-            None => One(self.th_to_p_pm(th, part, Plus)),
-            Some(th_max) if th == th_max => One(self.th_to_p_pm(th, part, Plus)),
-            Some(th_max) if th < th_max => Two(self.th_to_p_pm(th, part, Plus),
-                                               self.th_to_p_pm(th, part, Minus)),
-            Some(_) => Zero,
+            None => OneVal(self.th_to_p_pm(th, part, Plus)),
+            Some(th_max) if th == th_max => OneVal(self.th_to_p_pm(th, part, Plus)),
+            Some(th_max) if th < th_max => TwoVal(self.th_to_p_pm(th, part, Plus),
+                                                  self.th_to_p_pm(th, part, Minus)),
+            Some(_) => NoVal,
         }
     }
 

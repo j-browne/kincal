@@ -37,12 +37,12 @@ fn main() {
     };
     let r = ReactionKinematics::new(m, e_in);
 
-    use Value::{Zero, One, Two};
+    use Value::{NoVal, OneVal, TwoVal};
     use Outgoing::{Ejectile, Recoil};
     match (r.thi_to_thj(theta_p, Ejectile, Recoil), r.thi_to_kj(theta_p, Ejectile, Recoil)) {
-        (Zero, Zero) => {}
-        (One(th3), One(k3)) => { println!("{} {}", th3, k3); }
-        (Two(th3_1, th3_2), Two(k3_1, k3_2)) => { println!("{} {}", th3_1, k3_1); println!("{} {}", th3_2, k3_2); }
+        (NoVal, NoVal) => {}
+        (OneVal(th3), OneVal(k3)) => { println!("{} {}", th3, k3); }
+        (TwoVal(th3_1, th3_2), TwoVal(k3_1, k3_2)) => { println!("{} {}", th3_1, k3_1); println!("{} {}", th3_2, k3_2); }
         _ => { eprintln!("th2_to_th3 and th2_to_k3 do not have to same number of results")}
     }
 }

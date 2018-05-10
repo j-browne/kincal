@@ -1,6 +1,6 @@
 [package]
 name = "kincal"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["Justin Browne <jebdude89@gmail.com>"]
 
 [dependencies]

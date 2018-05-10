@@ -18,11 +18,11 @@ fn main_err() -> Result<(), Error> {
         let ths: Vec<_> = (0 ..= 180).map(|i| i as f64).collect();
         let mut k_minus = Vec::with_capacity(ths.len());
         for th in ths.iter() {
-            use Value::{Zero, One, Two};
+            use Value::{NoVal, OneVal, TwoVal};
             match r.th_to_k(*th, recoil_idx.try_into()?) {
-                Zero => {}
-                One(k) => { println!("{} {}", th, k); }
-                Two(k1, k2) => { println!("{} {}", th, k1); k_minus.push((*th, k2)); }
+                NoVal => {}
+                OneVal(k) => { println!("{} {}", th, k); }
+                TwoVal(k1, k2) => { println!("{} {}", th, k1); k_minus.push((*th, k2)); }
             }
         }
         for (th, k) in k_minus.iter().rev() {
