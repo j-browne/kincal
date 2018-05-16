@@ -3,14 +3,7 @@ extern crate kincal;
 use std::convert::TryInto;
 use kincal::{ReactionKinematics, Error, Value};
 
-fn main() {
-    match main_err() {
-        Ok(_) => {}
-        Err(e) => { println!("{:?}", e); }
-    };
-}
-
-fn main_err() -> Result<(), Error> {
+fn main() -> Result<(), Error> {
     let m = [33.970409992 * 931.494095, 4.001506179 * 931.494095, 1.007276469 * 931.494095, 36.962969140 * 931.494095 + 1.37085];
     let r = ReactionKinematics::new(m, 54.1900);
 
