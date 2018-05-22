@@ -6,28 +6,38 @@ use kincal::{ReactionKinematics, Value, Outgoing};
 fn main() {
     let args: Vec<String> = env::args().collect();
 
-    let e_in = match args[1].parse::<f64>() {
+    if args.len() != 5 {
+        println!("Usage: kincal <Projectile Name> <Projectile Energy> <Ejectile Theta> <Recoil Excitation Energy>");
+        println!();
+        println!("This calculates the properties of the recoil from a X(a,p)Y.");
+        println!("Allowed projectiles are \"34S\", \"34Cl\", and \"34Ar\".");
+        println!();
+        println!("Output: <Recoil Angle> <Recoil Energy>");
+        exit(1)
+    }
+
+    let beam = &args[1];
+    let e_in = match args[2].parse::<f64>() {
         Ok(e) => e,
         Err(_) => {
             eprintln!("failed to parse e_in");
             exit(1)
         }
     };
-    let theta_p = match args[2].parse::<f64>() {
+    let theta_p = match args[3].parse::<f64>() {
         Ok(t) => t,
         Err(_) => {
             eprintln!("failed to parse theta_p");
             exit(1)
         }
     };
-    let e_ex = match args[3].parse::<f64>() {
+    let e_ex = match args[4].parse::<f64>() {
         Ok(e) => e,
         Err(_) => {
             eprintln!("failed to parse e_ex");
             exit(1)
         }
     };
-    let beam = &args[4];
 
     let m = match beam.as_str() {
         "34S" => [33.967867012 * 931.494095, 4.001506179 * 931.494095, 1.007276469 * 931.494095, 36.965902584 * 931.494095 + e_ex],
