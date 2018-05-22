@@ -7,12 +7,12 @@ fn main() {
     let args: Vec<String> = env::args().collect();
 
     if args.len() != 5 {
-        println!("Usage: kincal <Projectile Name> <Projectile Energy> <Ejectile Theta> <Recoil Excitation Energy>");
-        println!();
-        println!("This calculates the properties of the recoil from a X(a,p)Y.");
-        println!("Allowed projectiles are \"34S\", \"34Cl\", and \"34Ar\".");
-        println!();
-        println!("Output: <Recoil Angle> <Recoil Energy>");
+        eprintln!("Usage: kincal <Projectile Name> <Projectile Energy> <Ejectile Theta> <Recoil Excitation Energy>");
+        eprintln!();
+        eprintln!("This calculates the properties of the recoil from a X(a,p)Y.");
+        eprintln!("Allowed projectiles are \"34S\", \"34Cl\", and \"34Ar\".");
+        eprintln!();
+        eprintln!("Output: <Recoil Angle> <Recoil Energy>");
         exit(1)
     }
 
