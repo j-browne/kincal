@@ -5,7 +5,7 @@ mod error;
 pub use particle::{Particle, Incoming, Outgoing};
 pub use error::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 enum PlusMinus {
     Plus,
     Minus,
@@ -196,6 +196,7 @@ impl ReactionKinematics {
         use Value::{NoVal, OneVal, TwoVal};
         let th_max = self.th_max(part);
 
+        #[cfg_attr(feature = "cargo-clippy", allow(float_cmp))]
         match th_max {
             None => OneVal(self.th_to_p_pm(th, part, Plus)),
             Some(th_max) if th == th_max => OneVal(self.th_to_p_pm(th, part, Plus)),
