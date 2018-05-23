@@ -4,13 +4,13 @@ use std::convert::TryInto;
 use kincal::{ReactionKinematics, Error, Value};
 
 fn main() -> Result<(), Error> {
-    let m = [33.970409992 * 931.494095, 4.001506179 * 931.494095, 1.007276469 * 931.494095, 36.962969140 * 931.494095 + 1.37085];
-    let r = ReactionKinematics::new(m, 54.1900);
+    let m = [33.970_409_992 * 931.494_095, 4.001_506_179 * 931.494_095, 1.007_276_469 * 931.494_095, 36.962_969_140 * 931.494_095 + 1.370_85];
+    let r = ReactionKinematics::new(m, 54.190);
 
     for recoil_idx in 2..=3 {
-        let ths: Vec<_> = (0 ..= 180).map(|i| i as f64).collect();
+        let ths: Vec<_> = (0 ..= 180).map(f64::from).collect();
         let mut k_minus = Vec::with_capacity(ths.len());
-        for th in ths.iter() {
+        for th in &ths {
             use Value::{NoVal, OneVal, TwoVal};
             match r.th_to_k(*th, recoil_idx.try_into()?) {
                 NoVal => {}

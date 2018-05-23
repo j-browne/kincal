@@ -19,7 +19,7 @@ pub enum Value {
 }
 
 impl Value {
-    pub fn map<F: Fn(f64) -> f64>(&self, f: F) -> Value {
+    pub fn map<F: Fn(f64) -> f64>(&self, f: F) -> Self {
         use Value::{NoVal, OneVal, TwoVal};
         match self {
             NoVal => NoVal,
@@ -56,8 +56,7 @@ impl From<(Option<f64>, Option<f64>)> for Value {
         use Value::{NoVal, OneVal, TwoVal};
         match o {
             (Some(f1), Some(f2)) => TwoVal(f1, f2),
-            (Some(f), None) => OneVal(f),
-            (None, Some(f)) => OneVal(f),
+            (Some(f), None) | (None, Some(f)) => OneVal(f),
             (None, None) => NoVal,
         }
     }
@@ -75,8 +74,8 @@ pub struct ReactionKinematics {
 }
 
 impl ReactionKinematics {
-    pub fn new(masses: [f64; 4], energy: f64) -> ReactionKinematics {
-        ReactionKinematics {
+    pub fn new(masses: [f64; 4], energy: f64) -> Self {
+        Self {
             masses,
             energy
         }
@@ -238,16 +237,16 @@ impl ReactionKinematics {
         e.map(|e| e - m)
     }
 
-    pub fn thi_to_thj(&self, thi: f64, parti: Outgoing, partj: Outgoing) -> Value {
-        let thcm = self.th_to_thcm(thi, parti);
+    pub fn thi_to_thj(&self, th_i: f64, part_i: Outgoing, part_j: Outgoing) -> Value {
+        let thcm = self.th_to_thcm(th_i, part_i);
 
-        thcm.map(|thcm| self.thcm_to_th(thcm, partj))
+        thcm.map(|thcm| self.thcm_to_th(thcm, part_j))
     }
 
-    pub fn thi_to_kj(&self, thi: f64, parti: Outgoing, partj: Outgoing) -> Value {
-        let thcm = self.th_to_thcm(thi, parti);
+    pub fn thi_to_kj(&self, th_i: f64, part_i: Outgoing, part_j: Outgoing) -> Value {
+        let thcm = self.th_to_thcm(th_i, part_i);
 
-        thcm.map(|thcm| self.thcm_to_k(thcm, partj))
+        thcm.map(|thcm| self.thcm_to_k(thcm, part_j))
     }
 }
 

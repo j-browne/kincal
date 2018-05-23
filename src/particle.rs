@@ -18,13 +18,13 @@ impl Particle {
 }
 
 impl From<Incoming> for Particle {
-    fn from(p: Incoming) -> Particle {
+    fn from(p: Incoming) -> Self {
         Particle::In(p)
     }
 }
 
 impl From<Outgoing> for Particle {
-    fn from(p: Outgoing) -> Particle {
+    fn from(p: Outgoing) -> Self {
         Particle::Out(p)
     }
 }
