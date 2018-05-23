@@ -1,9 +1,9 @@
 #![feature(try_from)]
-mod particle;
 mod error;
+mod particle;
 
-pub use particle::{Particle, Incoming, Outgoing};
 pub use error::Error;
+pub use particle::{Incoming, Outgoing, Particle};
 
 #[derive(Debug, Clone, Copy)]
 enum PlusMinus {
@@ -75,10 +75,7 @@ pub struct ReactionKinematics {
 
 impl ReactionKinematics {
     pub fn new(masses: [f64; 4], energy: f64) -> Self {
-        Self {
-            masses,
-            energy
-        }
+        Self { masses, energy }
     }
     pub fn masses(&self) -> &[f64; 4] {
         &self.masses
@@ -134,7 +131,7 @@ impl ReactionKinematics {
         let pcm_i_2 = self.pcm_i_2();
         let pcm_i = pcm_i_2.sqrt();
 
-        ((pcm_i + (m1_2 + pcm_i_2).sqrt())/ m1).ln()
+        ((pcm_i + (m1_2 + pcm_i_2).sqrt()) / m1).ln()
     }
 
     pub fn th_max(&self, part: Outgoing) -> Option<f64> {
@@ -149,15 +146,19 @@ impl ReactionKinematics {
         }
     }
 
-    pub fn thcm_to_th(&self, thcm:f64, part: Outgoing) -> f64 {
+    pub fn thcm_to_th(&self, thcm: f64, part: Outgoing) -> f64 {
         let pcm_f_2 = self.pcm_f_2();
         let m_2 = self.masses[part.index()].powi(2);
         let chi = self.chi();
-        let pm_particle = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+        let pm_particle = match part {
+            Outgoing::Ejectile => 1.0,
+            Outgoing::Recoil => -1.0,
+        };
 
         f64::atan2(
             f64::sin(thcm.to_radians()),
-            pm_particle * f64::cos(thcm.to_radians()) * f64::cosh(chi) + f64::sqrt(1.0 + m_2 / pcm_f_2) * f64::sinh(chi)
+            pm_particle * f64::cos(thcm.to_radians()) * f64::cosh(chi)
+                + f64::sqrt(1.0 + m_2 / pcm_f_2) * f64::sinh(chi),
         ).to_degrees()
     }
 
@@ -166,9 +167,13 @@ impl ReactionKinematics {
         let pcm_f = pcm_f_2.sqrt();
         let m_2 = self.masses[part.index()].powi(2);
         let chi = self.chi();
-        let pm = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+        let pm = match part {
+            Outgoing::Ejectile => 1.0,
+            Outgoing::Recoil => -1.0,
+        };
 
-        f64::sqrt(pcm_f_2 + m_2) * f64::cosh(chi) + pm * pcm_f * f64::cos(thcm.to_radians()) * f64::sinh(chi)
+        f64::sqrt(pcm_f_2 + m_2) * f64::cosh(chi)
+            + pm * pcm_f * f64::cos(thcm.to_radians()) * f64::sinh(chi)
     }
 
     pub fn thcm_to_k(&self, thcm: f64, part: Outgoing) -> f64 {
@@ -179,19 +184,25 @@ impl ReactionKinematics {
     }
 
     fn th_to_p_pm(&self, th: f64, part: Outgoing, pm: PlusMinus) -> f64 {
-        use PlusMinus::{Plus, Minus};
+        use PlusMinus::{Minus, Plus};
         let pcm_f_2 = self.pcm_f_2();
         let m = self.masses[part.index()];
         let m_2 = m.powi(2);
         let chi = self.chi();
-        let pm = match pm { Plus => 1.0, Minus => -1.0 };
+        let pm = match pm {
+            Plus => 1.0,
+            Minus => -1.0,
+        };
 
-        (f64::sqrt(m_2 + pcm_f_2) * f64::cos(th.to_radians()) * f64::sinh(chi) + pm * f64::cosh(chi) * f64::sqrt(pcm_f_2 - m_2 * f64::sin(th.to_radians()).powi(2) * f64::sinh(chi).powi(2))) /
-        (1.0 + f64::sin(th.to_radians()).powi(2) * f64::sinh(chi).powi(2))
+        (f64::sqrt(m_2 + pcm_f_2) * f64::cos(th.to_radians()) * f64::sinh(chi)
+            + pm * f64::cosh(chi)
+                * f64::sqrt(
+                    pcm_f_2 - m_2 * f64::sin(th.to_radians()).powi(2) * f64::sinh(chi).powi(2),
+                )) / (1.0 + f64::sin(th.to_radians()).powi(2) * f64::sinh(chi).powi(2))
     }
 
     fn th_to_p(&self, th: f64, part: Outgoing) -> Value {
-        use PlusMinus::{Plus, Minus};
+        use PlusMinus::{Minus, Plus};
         use Value::{NoVal, OneVal, TwoVal};
         let th_max = self.th_max(part);
 
@@ -199,8 +210,10 @@ impl ReactionKinematics {
         match th_max {
             None => OneVal(self.th_to_p_pm(th, part, Plus)),
             Some(th_max) if th == th_max => OneVal(self.th_to_p_pm(th, part, Plus)),
-            Some(th_max) if th < th_max => TwoVal(self.th_to_p_pm(th, part, Plus),
-                                                  self.th_to_p_pm(th, part, Minus)),
+            Some(th_max) if th < th_max => TwoVal(
+                self.th_to_p_pm(th, part, Plus),
+                self.th_to_p_pm(th, part, Minus),
+            ),
             Some(_) => NoVal,
         }
     }
@@ -209,11 +222,14 @@ impl ReactionKinematics {
         let pcm_f_2 = self.pcm_f_2();
         let m_2 = self.masses[part.index()].powi(2);
         let chi = self.chi();
-        let pm = match part { Outgoing::Ejectile => 1.0, Outgoing::Recoil => -1.0 };
+        let pm = match part {
+            Outgoing::Ejectile => 1.0,
+            Outgoing::Recoil => -1.0,
+        };
 
         f64::atan2(
             p * f64::sin(th.to_radians()) * f64::cosh(chi),
-            pm * p * f64::cos(th.to_radians()) - f64::sqrt(pcm_f_2 + m_2)  * f64::sinh(chi)
+            pm * p * f64::cos(th.to_radians()) - f64::sqrt(pcm_f_2 + m_2) * f64::sinh(chi),
         ).to_degrees()
     }
 
@@ -249,7 +265,6 @@ impl ReactionKinematics {
         thcm.map(|thcm| self.thcm_to_k(thcm, part_j))
     }
 }
-
 
 #[cfg(test)]
 mod tests {

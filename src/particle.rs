@@ -4,7 +4,7 @@ use std::convert::TryFrom;
 #[derive(Debug, Clone, Copy)]
 pub enum Particle {
     In(Incoming),
-    Out(Outgoing)
+    Out(Outgoing),
 }
 
 impl Particle {
@@ -32,9 +32,9 @@ impl From<Outgoing> for Particle {
 impl TryFrom<usize> for Particle {
     type Error = Error;
     fn try_from(idx: usize) -> Result<Self, Error> {
-        use Particle::{In, Out};
         use self::Incoming::{Projectile, Target};
         use self::Outgoing::{Ejectile, Recoil};
+        use Particle::{In, Out};
         match idx {
             0 => Ok(In(Projectile)),
             1 => Ok(In(Target)),
