@@ -1,4 +1,3 @@
-#![feature(try_from)]
 mod error;
 mod particle;
 
